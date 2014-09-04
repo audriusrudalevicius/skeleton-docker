@@ -120,10 +120,11 @@ RUN chown devop:devop /home/devop/www/
 #
 
 ADD init.sh /init.sh
+ADD run.sh /run.sh
 RUN chmod 755 /init.sh
 RUN bash /init.sh
 RUN rm /init.sh
 
 EXPOSE 22 80
 
-CMD ["/usr/bin/supervisord", "-n"]
+CMD ["/bin/bash", "/run.sh"]
