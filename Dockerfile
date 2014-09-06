@@ -32,18 +32,21 @@ RUN DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:nginx/stable
 RUN DEBIAN_FRONTEND=noninteractive apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install mysql-client
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install nginx php5-fpm
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install php5 php-apc php5-intl php5-cli php5-json php5-mysql
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install php5 php-apc php-gettext php-pear php5-cli php5-common php5-curl php5-dev php5-gd php5-imagick php5-intl php5-json php5-mcrypt php5-mysqlnd\
+ php5-readline\
+ php5-xdebug\
+ php5-xmlrpc
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install git openssh-server supervisor
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install pwgen vim curl less bash-completion acl
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install byobu
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install byobu tree
 RUN DEBIAN_FRONTEND=noninteractive apt-get -q -y install wget build-essential openssl
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -q -y msmtp ca-certificates
 
 #
 # Installing composer
 # -------------------
 #
-RUN curl -sS https://getcomposer.org/installer | php
-RUN mv composer.phar /usr/local/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
 
 
 #
@@ -61,22 +64,34 @@ RUN mkdir -p /var/log/supervisor
 # Configuring Nginx and PHP
 # -------------------------
 #
-# Config
-# Disabling all sites config
-# Putting our site config
-# Enabling our site config
-# Enabling mods
-#
 
 RUN sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" /etc/php5/fpm/php.ini
 RUN sed -i -e "s/;daemonize\s*=\s*yes/daemonize = no/g" /etc/php5/fpm/php-fpm.conf
 RUN sed -i 's/;date.timezone =/date.timezone = Europe\/Vilnius/g' /etc/php5/fpm/php.ini
 RUN sed -i 's/;date.timezone =/date.timezone = Europe\/Vilnius/g' /etc/php5/cli/php.ini
 
+RUN echo "cgi.fix_pathinfo = 0;" >> /etc/php5/fpm/php.ini
+RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 RUN find /etc/nginx/sites-enabled/ -type l -exec rm -v "{}" \;
 ADD nginx.conf /etc/nginx/sites-available/syfon.dev
 RUN ln -s /etc/nginx/sites-available/syfon.dev /etc/nginx/sites-enabled/syfon.dev
-RUN service nginx restart
+
+RUN echo "xdebug.remote_enable = 1\nxdebug.max_nesting_level = 5000\nxdebug.var_display_max_depth = 8\nxdebug.remote_autostart=0\nxdebug.remote_connect_back=1\nxdebug.remote_port=9000" >> /etc/php5/fpm/conf.d/20-xdebug.ini
+RUN echo "xdebug.remote_enable = 1\nxdebug.max_nesting_level = 5000\nxdebug.var_display_max_depth = 8\nxdebug.remote_autostart=0\nxdebug.remote_connect_back=1\nxdebug.remote_port=9000" >> /etc/php5/cli/conf.d/20-xdebug.ini
+RUN composer global require "phpunit/phpunit=4.1.*"
+
+#
+# Other
+# ----
+#
+RUN apt-get -y install ruby
+RUN gem install sass
+RUN add-apt-repository ppa:chris-lea/node.js && apt-get update
+RUN apt-get install -y nodejs
+RUN npm install -g bower
+RUN npm install -g grunt-cli
+RUN npm install -g coffee-script
+RUN npm install -g less
 
 #
 # User
@@ -103,28 +118,36 @@ ADD id_rsa /home/devop/.ssh/id_rsa
 ADD id_rsa.pub /home/devop/.ssh/id_rsa.pub
 ADD authorized_keys /home/devop/.ssh/authorized_keys
 RUN chown devop:devop /home/devop/.ssh -R
-RUN chmod 600 /home/devop/.ssh/authorized_keys
+RUN chmod g-w -R /home/devop/.ssh
+RUN chmod 700 /home/devop/.ssh
+RUN chmod 600 /home/devop/.ssh/*
 
 #
 # WWW
 # ---
 #
 
+RUN touch /var/log/nginx/project_error.log
 RUN mkdir -p /home/devop/www/
 RUN chown devop:devop /home/devop/www/
+RUN ln -s /var/log/nginx/project_error.log /home/devop/projcet_error.log
+RUN chown -R 755 /var/log/nginx
 
 #
 # Mail
 # ---
 #
 
-RUN apt-get install -q -y msmtp ca-certificates
+RUN adduser www-data mail
+
 RUN rm -f /etc/msmtprc
 
-ADD ssmtp.conf /etc/ssmtp.conf
+ADD ssmtp.conf /etc/msmtprc
+RUN chown devop:mail /etc/msmtprc
+RUN chmod 660 /etc/msmtprc
 
 RUN mkdir -p /var/log/msmtp
-RUN chown devop:devop /var/log/msmtp
+RUN chown devop:mail /var/log/msmtp
 
 RUN touch /etc/logrotate.d/msmtp
 RUN rm /etc/logrotate.d/msmtp
