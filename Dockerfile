@@ -36,8 +36,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install php5 php-apc p
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install git openssh-server supervisor
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install pwgen vim curl less bash-completion acl
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install byobu
-
-
+RUN DEBIAN_FRONTEND=noninteractive apt-get -q -y install wget build-essential openssl
 
 #
 # Installing composer
@@ -104,6 +103,7 @@ ADD id_rsa /home/devop/.ssh/id_rsa
 ADD id_rsa.pub /home/devop/.ssh/id_rsa.pub
 ADD authorized_keys /home/devop/.ssh/authorized_keys
 RUN chown devop:devop /home/devop/.ssh -R
+RUN chmod 600 /home/devop/.ssh/authorized_keys
 
 #
 # WWW
@@ -114,6 +114,26 @@ RUN mkdir -p /home/devop/www/
 RUN chown devop:devop /home/devop/www/
 
 #
+# Mail
+# ---
+#
+
+RUN apt-get install -q -y msmtp ca-certificates
+RUN rm -f /etc/msmtprc
+
+ADD ssmtp.conf /etc/ssmtp.conf
+
+RUN mkdir -p /var/log/msmtp
+RUN chown devop:devop /var/log/msmtp
+
+RUN touch /etc/logrotate.d/msmtp
+RUN rm /etc/logrotate.d/msmtp
+RUN echo "/var/log/msmtp/*.log {\n rotate 12\n monthly\n compress\n missingok\n notifempty\n }" > /etc/logrotate.d/msmtp
+
+RUN sed -i 's/;sendmail_path\s=.*/sendmail_path = \/usr\/bin\/msmtp -t/' /etc/php5/fpm/php.ini
+RUN sed -i 's/;sendmail_path\s=.*/sendmail_path = \/usr\/bin\/msmtp -t/' /etc/php5/cli/php.ini
+
+#
 # Scripts
 # ---
 #
@@ -122,6 +142,16 @@ ADD init.sh /init.sh
 RUN chmod 755 /init.sh
 RUN bash /init.sh
 RUN rm /init.sh
+RUN  echo "    IdentityFile ~/.ssh/id_rsa" >> /etc/ssh/ssh_config
+
+#
+# Tests
+# ---
+#
+
+RUN echo "<?php \$headers = 'From: webmaster@example.com'; mail('d3trax@gmail.com', 'Test email using PHP', 'This is a test email message', \$headers, '-fwebmaster@example.com');" > /home/devop/www/test.php
+RUN php /home/devop/www/test.php
+RUN rm -f /home/devop/www/test.php
 
 EXPOSE 22 80
 

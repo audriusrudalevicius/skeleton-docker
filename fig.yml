@@ -1,0 +1,17 @@
+web:
+  build: .
+  links:
+   - db:db
+  ports:
+   - "8001:80"
+   - "2221:22"
+  volumes:
+   - /home/audrius/www/docker-syfon/web:/home/devop/www/
+db:
+  image: tutum/mysql
+  volumes:
+   - /home/audrius/www/docker-syfon/mysql/:/var/lib/mysql
+  expose:
+   - "3306"
+  ports:
+   - "3307:3306"
