@@ -92,6 +92,7 @@ RUN npm install -g bower
 RUN npm install -g grunt-cli
 RUN npm install -g coffee-script
 RUN npm install -g less
+RUN npm install -g phantomjs
 
 #
 # User
