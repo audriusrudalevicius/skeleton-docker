@@ -25,6 +25,11 @@ Run stack
 fig up -d
 ```
 
+Shh
+```sh
+ssh devop@0.0.0.0:2221
+```
+
 Stack
 ==
 
