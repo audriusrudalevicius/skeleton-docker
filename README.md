@@ -30,6 +30,12 @@ Shh
 ssh devop@0.0.0.0:2221
 ```
 
+web
+```sh
+echo '0.0.0.0 syfon.dev' >> /etc/hosts
+syfon.dev:8001
+```
+
 Stack
 ==
 
