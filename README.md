@@ -64,3 +64,4 @@ Stack
 * grunt-cli
 * nodejs
 * rsyslog
+* phantomjs
