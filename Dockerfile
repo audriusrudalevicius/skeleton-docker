@@ -130,8 +130,8 @@ RUN chmod 600 /home/devop/.ssh/*
 
 RUN touch /var/log/nginx/project_error.log
 RUN mkdir -p /home/devop/www/
-RUN chown devop:devop /home/devop/www/
-RUN ln -s /var/log/nginx/project_error.log /home/devop/projcet_error.log
+RUN chown -R devop:devop /home/devop/www/
+RUN ln -s /var/log/nginx/project_error.log /home/devop/www/projcet_error.log
 RUN chown -R 755 /var/log/nginx
 
 #

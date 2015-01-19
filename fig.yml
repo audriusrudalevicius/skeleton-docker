@@ -6,11 +6,11 @@ web:
    - "8001:80"
    - "2221:22"
   volumes:
-   - /home/audrius/www/docker-syfon/web:/home/devop/www/
+   - /Users/audrius/Documents/Source/skeleton-docker/www/:/home/devop/www/
 db:
-  image: tutum/mysql
+  image: tutum/mysql:5.5
   volumes:
-   - /home/audrius/www/docker-syfon/mysql/:/var/lib/mysql
+   - /Users/audrius/Documents/Source/skeleton-docker/db/:/var/lib/mysql
   expose:
    - "3306"
   ports:
